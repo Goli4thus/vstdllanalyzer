@@ -22,6 +22,7 @@ class DllFile:
         self.filename = filename
         self.resultOverall = False # Accumulated check result
         self.resultCheckX = [ ]
+        self.resultVstDueToSo = False
 
 
 def performCheckString(dllpath, caseSensitive, delimit, strVal):
@@ -52,6 +53,13 @@ def performCheckString(dllpath, caseSensitive, delimit, strVal):
         --- Exception means that grep couldn't find anything
         --- Therefore check is considered failed. 
         '''
+        return False
+
+def performCheckSoExists(dllpath):
+    pathVstSo = dllpath[0:-4] + '.so'
+    if os.path.isfile(pathVstSo):
+        return True
+    else:
         return False
 
 
@@ -110,6 +118,7 @@ def main():
         dllFile.resultCheckX.append(performCheckString(dllFile.filepath, True,  False, strCheck5))
         dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck6))
         dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck7))
+        dllFile.resultVstDueToSo = performCheckSoExists(dllFile.filepath)
 
         # Result overall
         if True in dllFile.resultCheckX:
@@ -127,6 +136,7 @@ def main():
     with open('output.csv', 'w', newline='') as csvFile:
         spamwriter = csv.writer(csvFile, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         spamwriter.writerow(['Result overall', 
+                             'VST due to so',
                              'Name', 
                              'Path', 
                              'C 1: ' + strCheck1 + '(case sens.)', 
@@ -139,6 +149,7 @@ def main():
                              ])
         for dllFile in dllFiles:
             spamwriter.writerow([dllFile.resultOverall, 
+                                 dllFile.resultVstDueToSo, 
                                  dllFile.filename, 
                                  dllFile.filepath,
                                  dllFile.resultCheckX[0], 
