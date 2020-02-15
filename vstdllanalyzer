@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+'''
+--------------------------------------------------------------------------------
+---- vstdllanalyzer  -----------------------------------------------------------
+--------------------------------------------------------------------------------
+--- Purpose:
+    Collect a bunch of information on all dll files encountered during a recursive
+    folder scan. Dll files are analyzed using a combination of commands 'strings'
+    and 'grep' in conjucntion with various search patterns.
+    The result is a CSV output file, which can be analyzed further.
+'''
+import os
+import sys
+import shutil
+import subprocess
+import csv
+
+
+class DllFile:
+    def __init__(self, filepath, filename):
+        self.filepath = filepath
+        self.filename = filename
+        self.resultOverall = False # Accumulated check result
+        self.resultCheckX = [ ]
+
+
+def performCheckString(dllpath, caseSensitive, delimit, strVal):
+    try:
+        ps = subprocess.Popen(('strings', dllpath), stdout=subprocess.PIPE)
+
+        strMatch = ''
+        if delimit:
+            strMatch = '^' + strVal + '$'
+        else:
+            strMatch = strVal
+        strCase = ''
+
+        if caseSensitive:
+            strCase = '--no-ignore-case'
+        else:
+            strCase = '--ignore-case'
+
+        output = subprocess.check_output(('grep', strCase, strMatch), stdin=ps.stdout)
+        ps.wait()
+        # if strVal == 'PtsV' and caseSensitive:
+            # print('### \'PtsV\' match was: {}'.format(output))
+        return True
+    except subprocess.CalledProcessError as e:
+        # raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+        # print("[EXCEPTION] ({}) command '{}' return with error (code {}): {}".format(os.path.basename(dllpath), e.cmd, e.returncode, e.output))
+        '''
+        --- Exception means that grep couldn't find anything
+        --- Therefore check is considered failed. 
+        '''
+        return False
+
+
+def main():
+    '''
+    # What to do:
+        # 1) Scan specified path (argument) recursively
+        # 2) Print all dll-files as filename
+        3) 
+    '''
+
+    if len(sys.argv) == 1:
+        print('Need one argument: path')
+        sys.exit(0)
+
+    dllFiles = []
+
+    walk_dir = os.path.abspath(sys.argv[1])
+    if not os.path.isdir(walk_dir):
+        print('The specified argument is no valid path.')
+        sys.exit(0)
+
+    print('walk_dir = ' + os.path.abspath(walk_dir))
+
+    # Collect all dll paths recursively
+    for root, subdirs, files in os.walk(walk_dir):
+        # print('--\nroot = ' + root)
+        # for subdir in subdirs:
+            # print('\t- subdirectory ' + subdir)
+
+        for filename in files:
+            tmp, fileExtension = os.path.splitext(filename)
+            if fileExtension == '.dll':
+                filepath = os.path.join(root, filename)
+                dllFiles.append(DllFile(filepath, filename))
+
+    print('--------------------------------------------------------------------------------')
+    # Specify check strings
+    strCheck1 = 'VSTPluginMain'
+    strCheck2 = 'VSTPluginMain'
+    strCheck3 = 'PtsV'
+    strCheck4 = 'PtsV'
+    strCheck5 = 'VstP'
+    strCheck6 = 'VstP'
+    strCheck7 = 'vst'
+
+    # Perform checks
+    # for dllFile in dllFiles:
+    amount = len(dllFiles)
+    for index, dllFile in enumerate(dllFiles):
+        # print('\t- %s  (%s)' % (dllFile.filename, dllFile.filepath))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, True,  False, strCheck1))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck2))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, True,  False, strCheck3))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck4))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, True,  False, strCheck5))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck6))
+        dllFile.resultCheckX.append(performCheckString(dllFile.filepath, False, False, strCheck7))
+
+        # Result overall
+        if True in dllFile.resultCheckX:
+            dllFile.resultOverall = True;
+
+        # Condensed in progress results
+        print('  - {:6} / {} --- [ {:1} ] {:30}'.format(\
+                                   index + 1, \
+                                   amount, \
+                                   dllFile.resultOverall, \
+                                   dllFile.filename, \
+                                   ))
+    print('--------------------------------------------------------------------------------')
+    print('Writing CSV output file...')
+    with open('output.csv', 'w', newline='') as csvFile:
+        spamwriter = csv.writer(csvFile, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        spamwriter.writerow(['Result overall', 
+                             'Name', 
+                             'Path', 
+                             'C 1: ' + strCheck1 + '(case sens.)', 
+                             'C 2: ' + strCheck2, 
+                             'C 3: ' + strCheck3 + '(case sens.)', 
+                             'C 4: ' + strCheck4, 
+                             'C 5: ' + strCheck5 + '(case sens.)',
+                             'C 6: ' + strCheck6, 
+                             'C 7: ' + strCheck7
+                             ])
+        for dllFile in dllFiles:
+            spamwriter.writerow([dllFile.resultOverall, 
+                                 dllFile.filename, 
+                                 dllFile.filepath,
+                                 dllFile.resultCheckX[0], 
+                                 dllFile.resultCheckX[1], 
+                                 dllFile.resultCheckX[2], 
+                                 dllFile.resultCheckX[3], 
+                                 dllFile.resultCheckX[4],
+                                 dllFile.resultCheckX[5],
+                                 dllFile.resultCheckX[6]])
+    print('... done.')
+    print('--------------------------------------------------------------------------------')
+
+if __name__ == '__main__':
+    main()
