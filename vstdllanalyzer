@@ -122,7 +122,7 @@ def main():
 
         # Result overall
         if True in dllFile.resultCheckX:
-            dllFile.resultOverall = True;
+            dllFile.resultOverall = True
 
         # Condensed in progress results
         print('  - {:6} / {} --- [ {:1} ] {:30}'.format(\
@@ -134,7 +134,7 @@ def main():
     print('--------------------------------------------------------------------------------')
     print('Writing CSV output file...')
     with open('output.csv', 'w', newline='') as csvFile:
-        spamwriter = csv.writer(csvFile, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        spamwriter = csv.writer(csvFile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         spamwriter.writerow(['Result overall', 
                              'VST due to so',
                              'Name', 
