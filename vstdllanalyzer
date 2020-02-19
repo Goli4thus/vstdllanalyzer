@@ -92,7 +92,9 @@ def main():
 
         for filename in files:
             tmp, fileExtension = os.path.splitext(filename)
-            if fileExtension == '.dll':
+            if fileExtension == '.dll' or \
+               fileExtension == '.Dll' or \
+               fileExtension == '.DLL':
                 filepath = os.path.join(root, filename)
                 dllFiles.append(DllFile(filepath, filename))
 
