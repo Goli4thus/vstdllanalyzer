@@ -147,7 +147,8 @@ def main():
                              'C 4: ' + strCheck4, 
                              'C 5: ' + strCheck5 + '(case sens.)',
                              'C 6: ' + strCheck6, 
-                             'C 7: ' + strCheck7
+                             'C 7: ' + strCheck7,
+                             'extension'
                              ])
         for dllFile in dllFiles:
             spamwriter.writerow([dllFile.resultOverall, 
@@ -160,7 +161,8 @@ def main():
                                  dllFile.resultCheckX[3], 
                                  dllFile.resultCheckX[4],
                                  dllFile.resultCheckX[5],
-                                 dllFile.resultCheckX[6]])
+                                 dllFile.resultCheckX[6],
+                                 dllFile.filename[-3:]])
     print('... done.')
     print('--------------------------------------------------------------------------------')
 
